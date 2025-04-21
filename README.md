@@ -111,7 +111,7 @@ public class InvoiceQuery
 
 Frontend Setup (DataTables with server-side or local data)
 
-{
+```javascript
 const columns = [
   { title: '#', data: 'counter', orderable: false, searchable: false },
   { title: 'Full Name', data: 'fullName', orderable: true, searchable: true },
@@ -154,6 +154,3 @@ const table = $('#datatable').DataTable({
     }
   ]
 });
-}
-
-
