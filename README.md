@@ -18,6 +18,7 @@ A .NET 8 library for integrating with DataTables.js.
 
 // README Usage Example: DataTablesJs Integration in Controller
 
+```C#
 // --- Program.cs Configuration ---
 // Ensure the following is added in your Program.cs or Startup.cs
 using HeadLess.DataTables.Extensions;
@@ -105,7 +106,7 @@ public class InvoiceQuery
     public DateTime DueDate { get; set; }
     public DateTime? PaidDate { get; set; }
 }
-
+```
 
 ------------------------------------------------------- USAGE ON FRONTEND --------------------------------------------------------
 
