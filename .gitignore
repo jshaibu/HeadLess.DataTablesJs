@@ -1,0 +1,18 @@
+# Ignore JetBrains Rider
+.idea/
+
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+
+# Swap files
+*.swp
+
+# Other common temp files
+*.suo
+*.userosscache
+*.sln.docstates
