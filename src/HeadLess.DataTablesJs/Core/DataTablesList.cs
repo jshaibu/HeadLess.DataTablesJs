@@ -21,17 +21,14 @@ public class DataTablesList : IDataTablesList
         _logger = logger;
     }
 
-    public async Task<DataTableResult<T>> ProcessRequest<T>(DataTablesRequest request, List<T> data)
+    public DataTableResult<T> ProcessRequest<T>(DataTablesRequest request, List<T> data)
     {
         try
         {
             var filteredData = data.AsQueryable();
 
             // Apply global search if search value is present
-            //if (!string.IsNullOrEmpty(request.Search?.Value))
-            //{
             filteredData = ApplyGlobalSearch(request, filteredData);
-            // }
 
             // Apply individual column search if column searches are present
             if (request.Columns.Any(c => c.Searchable && !string.IsNullOrEmpty(c.Search?.Value)))
@@ -48,7 +45,7 @@ public class DataTablesList : IDataTablesList
             }
 
             // Apply pagination
-            var pagedData = await filteredData.Skip(request.Start).Take(request.Length).ToListAsync();
+            var pagedData = filteredData.Skip(request.Start).Take(request.Length).ToList(); // No async needed
 
             return new DataTableResult<T>
             {
@@ -65,12 +62,11 @@ public class DataTablesList : IDataTablesList
         }
     }
 
-    public interface ICounterable
-    {
-        int Counter { get; set; }
-    }
-
-    public List<TViewModel> TransformData<T, TViewModel>(List<T> data, DataTablesRequest request, Func<T, TViewModel> transform)
+    public List<TViewModel> TransformData<T, TViewModel>(
+        List<T> data,
+        DataTablesRequest request,
+        Func<T, TViewModel> transform
+    )
     {
         int counter = 1;
         if (request.Start > (request.Length - 1)) counter += request.Start;
@@ -78,11 +74,15 @@ public class DataTablesList : IDataTablesList
         return data.Select(item =>
         {
             var viewModel = transform(item);
-            // Assuming `viewModel` has a property named `Counter`
-            if (viewModel is ICounterable counterable)
+
+            // Check if the viewModel implements ICounterable or has a 'Counter' property
+            var counterableProperty = typeof(TViewModel).GetProperty("Counter");
+            if (counterableProperty != null && counterableProperty.CanWrite)
             {
-                counterable.Counter = counter++;
+                // Assign the counter value to the 'Counter' property of the viewModel
+                counterableProperty.SetValue(viewModel, counter++);
             }
+
             return viewModel;
         }).ToList();
     }
@@ -90,23 +90,54 @@ public class DataTablesList : IDataTablesList
     private IQueryable<T> ApplyGlobalSearch<T>(DataTablesRequest request, IQueryable<T> data)
     {
         var searchValue = request.Search?.Value?.ToLower();
-        var searchableColumns = request.Columns.Where(c => c.Searchable).Select(c => c.Data).ToList();
-        //Console.WriteLine(request.Columns.Count());
+        var searchableColumns = request.Columns
+            .Where(c => c.Searchable && !string.IsNullOrWhiteSpace(c.Data))
+            .Select(c => c.Data!)
+            .ToList();
+
         if (!string.IsNullOrEmpty(searchValue) && searchableColumns.Any())
         {
             try
             {
-                // Construct the search query
-                var searchQuery = string.Join(" OR ", searchableColumns.Select(c => $"{c}.ToString().ToLower().Contains(@0)"));
+                var filters = new List<string>();
+                var type = typeof(T);
+                var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                                     .Select(p => p.Name)
+                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                // Apply the search query to the data
-                data = data.Where(searchQuery, searchValue);
+                foreach (var column in searchableColumns)
+                {
+                    if (column.Equals("fullName", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Optional checks before including the property in the filter
+                        if (properties.Contains("FirstName") && properties.Contains("LastName"))
+                            filters.Add("FirstName.ToLower().Contains(@0) && LastName.ToLower().Contains(@0)");
+
+                        if (properties.Contains("FirstName"))
+                            filters.Add("FirstName.ToLower().Contains(@0)");
+
+                        if (properties.Contains("LastName"))
+                            filters.Add("LastName.ToLower().Contains(@0)");
+
+                        if (properties.Contains("FirstName") && properties.Contains("Surname"))
+                            filters.Add("FirstName.ToLower().Contains(@0) && Surname.ToLower().Contains(@0)");
+                    }
+                    else if (properties.Contains(column))
+                    {
+                        filters.Add($"{column}.ToString().ToLower().Contains(@0)");
+                    }
+                }
+
+                if (filters.Any())
+                {
+                    var searchQuery = string.Join(" OR ", filters);
+                    data = data.Where(searchQuery, searchValue);
+                }
             }
             catch (Exception ex)
             {
-                // Log the exception if something goes wrong
                 _logger.LogError(ex, "Error applying global search.");
-                throw; // Rethrow the exception to notify the caller
+                throw;
             }
         }
 
@@ -129,17 +160,47 @@ public class DataTablesList : IDataTablesList
 
     private IQueryable<T> ApplySorting<T>(DataTablesRequest request, IQueryable<T> data)
     {
+        var type = typeof(T);
+        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                             .Select(p => p.Name)
+                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var order in request.Order)
         {
             var columnName = request.Columns[order.Column].Data;
+
             var direction = order.Dir?.ToLower() == "asc" ? "" : " descending";
-            if (!string.IsNullOrEmpty(columnName))
+
+            if (!string.IsNullOrEmpty(columnName) && properties.Contains(columnName!))
             {
-                data = data.OrderBy($"{columnName}{direction}");
+                try
+                {
+                    data = data.OrderBy($"{columnName}{direction}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to sort by {ColumnName}", columnName);
+                }
             }
-            else if (typeof(T).GetProperty("FirstName") != null) // Check if FirstName exists
+            else
             {
-                data = data.OrderBy("FirstName asc");
+                _logger.LogDebug("Skipping invalid or virtual column for sorting: {ColumnName}", columnName);
+            }
+        }
+
+        if (!request.Order.Any(o =>
+        {
+            var col = request.Columns[o.Column].Data;
+            return !string.IsNullOrEmpty(col) && properties.Contains(col!);
+        }))
+        {
+            if (properties.Contains("FirstName"))
+            {
+                data = data.OrderBy("FirstName");
+            }
+            else if (properties.Contains("Id"))
+            {
+                data = data.OrderBy("Id");
             }
         }
 

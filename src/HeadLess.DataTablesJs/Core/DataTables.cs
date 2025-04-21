@@ -33,7 +33,7 @@ public class DataTablesService : IDataTablesService
         if (query is List<T> list)
         {
             WriteLine("It's a List<T>");
-            return _listService.ProcessRequest<T>(request: request, data: list);          
+            return Task.FromResult(_listService.ProcessRequest<T>(request: request, data: list));            
         }
         else if (query is IQueryable<T> q)
         {
