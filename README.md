@@ -13,7 +13,7 @@ A .NET 8 library for integrating with DataTables.js.
 
 
 
------------------------------------------------------------------ USAGE -------------------------------------------------------
+----------------------------------------------------------------- USAGE ON BACKEND -------------------------------------------------------
 
 
 // README Usage Example: DataTablesJs Integration in Controller
@@ -107,7 +107,51 @@ public class InvoiceQuery
 }
 
 
+------------------------------------------------------- USAGE ON FRONTEND --------------------------------------------------------
 
+Frontend Setup (DataTables with server-side or local data)
 
+const columns = [
+  { title: '#', data: 'counter', orderable: false, searchable: false },
+  { title: 'Full Name', data: 'fullName', orderable: true, searchable: true },
+  { title: 'Payment Date', data: 'paymentDate', orderable: true, searchable: true },
+  { title: 'Amount Paid', data: 'amountPaid', orderable: true, searchable: true },
+  { title: 'Method Name', data: 'methodName', orderable: true, searchable: true }
+];
+
+const table = $('#datatable').DataTable({
+  processing: true,
+  serverSide: true,
+  ajax: {
+    url: '/api/invoices/datatables', // your .NET API endpoint
+    type: 'POST',
+    contentType: 'application/json',
+    data: function (d) {
+      return JSON.stringify(d); // send JSON instead of form-urlencoded
+    }
+  },
+  columns: columns,
+  pagingType: 'simple_numbers',
+  language: {
+    search: '_INPUT_',
+    searchPlaceholder: 'Search...',
+    paginate: {
+      previous: 'Previous',
+      next: 'Next'
+    },
+    aria: {
+      sortAscending: 'sorting_asc',
+      sortDescending: 'sorting_desc'
+    }
+  },
+  columnDefs: [
+    {
+      targets: '_all',
+      createdCell: function (td) {
+        $(td).addClass('sorting');
+      }
+    }
+  ]
+});
 
 
