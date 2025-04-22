@@ -78,7 +78,7 @@ If you'd rather consume the library as a NuGet package:
 2. **Add the package to your app**
    ```bash
    
-# In your app directory
+## In your app directory
 
 ```
 dotnet add package HeadLess.DataTablesJs --source libs/HeadLess.DataTablesJs/bin/Release
