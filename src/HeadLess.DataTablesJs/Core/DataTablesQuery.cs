@@ -66,14 +66,10 @@ public class DataTablesQuery : IDataTablesQuery
 
         var parameter = Expression.Parameter(typeof(T), "x");
 
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(request.Columns, Newtonsoft.Json.Formatting.Indented));
-
         searchableProperties ??= request.Columns
             .Where(c => c.Searchable && !string.IsNullOrWhiteSpace(c.Data))
             .Select(c => c.Data!)
             .ToList();
-
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(searchableProperties, Newtonsoft.Json.Formatting.Indented));
 
         var modelProps = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -90,9 +86,7 @@ public class DataTablesQuery : IDataTablesQuery
 
 
         if (!searchableProperties.Any())
-            return query;
-
-        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(searchableProperties, Newtonsoft.Json.Formatting.Indented));
+            return query;       
 
         var predicate = BuildSearchExpression<T>(parameter, searchValue, searchableProperties);
         return query.Where(Expression.Lambda<Func<T, bool>>(predicate, parameter));

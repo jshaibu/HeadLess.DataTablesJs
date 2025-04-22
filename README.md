@@ -11,9 +11,79 @@ A .NET 8 library for integrating with DataTables.js.
 - **tests/** – unit tests  
 - **build/** – CI/CD or NuGet configs  
 
+## HeadLess.DataTablesJs Integration Guide
+
+This README shows you how to integrate the `HeadLess.DataTablesJs` (.NET 8) library into a .NET application.
+
+### 1. Clone the Library
+
+From the root of your application repository, create a `libs/` folder (if it doesn't exist) and clone the library:
+
+```bash
+mkdir -p libs
+git clone https://github.com/jshaibu/HeadLess.DataTablesJs.git libs/HeadLess.DataTablesJs
+```
+
+### 2. Add the Library Project to Your Solution
+
+If you already have a solution file (`.sln`), add the library project to it:
+
+```bash
+dotnet sln add libs/HeadLess.DataTablesJs/HeadLess.DataTablesJs.csproj
+```
+
+If you do *not* have a solution yet, create one and then add both your app and the library:
+
+```bash
+# Create a new solution
+dotnet new sln -n MyApp
+
+# Add the library and your application projects
+dotnet sln MyApp.sln add libs/HeadLess.DataTablesJs/HeadLess.DataTablesJs.csproj
+# Replace `src/MyApp/MyApp.csproj` with the path to your .NET app project
+dotnet sln MyApp.sln add src/MyApp/MyApp.csproj
+```
+
+### 3. Reference the Library from Your .NET App
+
+Inside your .NET application directory:
+
+```bash
+# Adjust path as necessary to point to the library project
+dotnet add reference ../../libs/HeadLess.DataTablesJs/HeadLess.DataTablesJs.csproj
+```
+
+This will add a `<ProjectReference>` entry to your app's `.csproj` file under an `<ItemGroup>`.
+
+### 4. Build and Run Your Solution
+
+```bash
+# From your solution root (where the .sln file lives)
+dotnet build
+
+dotnet run --project src/MyApp/MyApp.csproj
+```
+
+Your .NET 9 application will now reference and include the .NET 8 library automatically.
+
+### 5. (Optional) Pack & Consume as a NuGet Package
+
+If you'd rather consume the library as a NuGet package:
+
+1. **Pack the library**
+   ```bash
+   cd libs/HeadLess.DataTablesJs
+   dotnet pack -c Release
+   ```
+2. **Add the package to your app**
+   ```bash
+   # In your app directory
+dotnet add package HeadLess.DataTablesJs --source libs/HeadLess.DataTablesJs/bin/Release
+   ```
+```
 
 
------------------------------------------------------------------ USAGE ON BACKEND -------------------------------------------------------
+## USAGE ON BACKEND 
 
 
 // README Usage Example: DataTablesJs Integration in Controller
@@ -108,7 +178,7 @@ public class InvoiceQuery
 }
 ```
 
-------------------------------------------------------- USAGE ON FRONTEND --------------------------------------------------------
+## USAGE ON FRONTEND
 
 Frontend Setup (DataTables with server-side or local data)
 
@@ -155,3 +225,7 @@ const table = $('#datatable').DataTable({
     }
   ]
 });
+
+```
+
+### Happy coding!
