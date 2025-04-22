@@ -64,7 +64,7 @@ dotnet build
 dotnet run --project src/MyApp/MyApp.csproj
 ```
 
-Your .NET 9 application will now reference and include the .NET 8 library automatically.
+Your .NET application will now reference and include the .NET 8 library automatically.
 
 ### 5. (Optional) Pack & Consume as a NuGet Package
 
