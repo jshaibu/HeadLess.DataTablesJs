@@ -66,22 +66,6 @@ dotnet run --project src/MyApp/MyApp.csproj
 
 Your .NET application will now reference and include the .NET 8 library automatically.
 
-### 5. (Optional) Pack & Consume as a NuGet Package
-
-If you'd rather consume the library as a NuGet package:
-
-1. **Pack the library**
-   ```bash
-   cd libs/HeadLess.DataTablesJs
-   dotnet pack -c Release
-   ```
-2. **Add the package to your app**
-   ```bash
-    # In your app directory
-    dotnet add package HeadLess.DataTablesJs --source libs/HeadLess.DataTablesJs/bin/Release
-    ```
-
-
 ## USAGE ON BACKEND 
 
 
